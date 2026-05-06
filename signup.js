@@ -1,5 +1,5 @@
 async function signup(event){
-  event.preventDefault();//prevent page redirect
+  event.preventDefault();
 
   let form = event.target;
   let fields = event.target.elements;
@@ -10,17 +10,15 @@ async function signup(event){
     password: fields['password'].value,
   }
 
-  //reset form
   form.reset();
 
-  //send data to application server
   let result = await sendRequest(`${server}/signup`, 'POST', data);
   
-  if('error' in result){
-    toast("Loggin Failed: "+result['error']);//show error message
+  if('detail' in result){
+    toast("Register Failed: "+result['detail']);
   }else{
-    toast("Logged Successful");
-    window.location.href= 'index.html';//redirect the page
+    toast("Register Successful");
+    window.location.href= 'index.html';
   }
 }
 

@@ -1,99 +1,80 @@
-const tabs = M.Tabs.init(document.querySelector('.tabs'));
+async function displayTodos(data){
+  let result = document.querySelector('#result');
+  result.innerHTML = '';
+  let html = '';
 
-//function must be declared async to support the await keyword
-async function displayTodos(data) {
-
-  let result = document.querySelector('#result');//access the DOM
-
-  result.innerHTML = '';//clear result area
-
-  let html = '';//make an empty html string 
-
-  if ("error" in data) {//user not logged in 
-    html += `
+  if(!Array.isArray(data)){
+    html+= `
       <li class="card collection-item col s12 m4">
-                <div class="card-content">
-                  <span class="card-title">
-                    Error : Not Logged In
-                  </span>
-                </div>
-        </li>
+        <div class="card-content">
+          <span class="card-title">Error : Not Logged In</span>
+        </div>
+      </li>
     `;
-  } else {
-    for (let todo of data) {
-      html += `
+  }else{
+    for(let todo of data){
+      html+= `
         <li class="card collection-item col s12 m4">
-                  <div class="card-content">
-                    <span class="card-title">${todo.text}
-                      <label class="right">
-                        <input type="checkbox" data-id="${todo.id}" onclick="toggleDone(event)" ${todo.done ? 'checked' : ''} />
-                        <span>Done</span>
-                      </label>
-                    </span>
-                  </div>
-                  <div class="card-action">
-                    <a href="#" onclick="deleteTodo('${todo.id}')">DELETE</a>
-                  </div>
-          </li>
-      `;//create html for each todo data by interpolating the values in the todo
+          <div class="card-content">
+            <span class="card-title">${todo.text}
+              <label class="right">
+                <input type="checkbox" data-id="${todo.id}" onclick="toggleDone(event)" ${todo.done ? 'checked': ''} />
+                <span>Done</span>
+              </label>
+            </span>
+          </div>
+          <div class="card-action">
+            <a href="#" onclick="deleteTodo('${todo.id}')">DELETE</a>
+          </div>
+        </li>
+      `;
     }
   }
-
-  //add the dynamic html to the DOM
+  
   result.innerHTML = html;
 }
 
-async function loadView() {
+async function loadView(){
   let todos = await sendRequest(`${server}/todos`, 'GET');
   displayTodos(todos);
 }
 
-loadView();
-
-async function createTodo(event) {
-  event.preventDefault();//stop the form from reloading the page
-  let form = event.target.elements;//get the form from the event object
-
+async function createTodo(event){
+  event.preventDefault();
+  let form = event.target.elements;
   let data = {
-    text: form['addText'].value,//get data from form
-    done: false,// newly created todos aren't done by default
+    text: form['addText'].value,
+    done: false,
   }
-
-  event.target.reset();//reset form
-
+  event.target.reset();
   let result = await sendRequest(`${server}/todos`, 'POST', data);
-
-  if ('error' in result) {
+  if(!result || 'detail' in result){
     toast('Error: Not Logged In');
-  } else {
+  }else{
     toast('Todo Created!');
   }
-
   loadView();
-
 }
 
-//attach createTodo() to the submit event of the form
-document.forms['addForm'].addEventListener('submit', createTodo);
-
-async function toggleDone(event) {
+async function toggleDone(event){
   let checkbox = event.target;
-  let id = checkbox.dataset['id'];//get id from data attribute
-
-  let result = await sendRequest(`${server}/todos/${id}/done`, 'PUT');
-
-  toast(result.message);
+  let id = checkbox.dataset['id'];
+  let done = checkbox.checked;
+  let result = await sendRequest(`${server}/todo/${id}`, 'PUT', {done: done});
+  let message = done ? 'Done!' : 'Not Done!';
+  toast(message);
 }
 
-async function deleteTodo(id) {
-  let result = await sendRequest(`${server}/todos/${id}`, 'DELETE');
-
+async function deleteTodo(id){
+  let result = await sendRequest(`${server}/todo/${id}`, 'DELETE');
   toast('Deleted!');
-
   loadView();
 }
 
-function logout() {
+function logout(){
   window.localStorage.removeItem('access_token');
   window.location.href = "index.html";
 }
+
+document.forms['addForm'].addEventListener('submit', createTodo);
+loadView();
